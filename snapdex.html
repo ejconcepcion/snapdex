@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>SnapDex</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+html,body{height:100%;background:#f5f0e8;overflow:hidden}
+#app{height:100%;display:flex;flex-direction:column;overflow:hidden}
+button{cursor:pointer;font-family:inherit;border:none}
+.screen{display:none;flex:1;flex-direction:column;overflow:hidden}
+.screen.active{display:flex}
+/* header */
+#header{background:#1a3c2e;padding:14px 16px 12px;display:flex;align-items:center;gap:10;flex-shrink:0}
+#avatar-icon{font-size:26px;width:38px;height:38px;display:flex;align-items:center;justify-content:center}
+#header-title{flex:1}
+#header-title .name{font-size:15px;font-weight:700;color:#fff}
+#header-title .sub{font-size:11px;color:#74c69d;margin-top:1px}
+#coin-display{display:flex;align-items:center;gap:5px;background:rgba(255,255,255,0.15);border-radius:20px;padding:6px 12px}
+#coin-display span{font-size:14px;font-weight:600;color:#fff}
+#snap-btn{background:#74c69d;border-radius:12px;width:40px;height:40px;font-size:20px;display:flex;align-items:center;justify-content:center}
+/* tabs */
+#tabs{display:flex;background:#fdfcf9;border-bottom:1px solid rgba(0,0,0,0.08);flex-shrink:0}
+.tab-btn{flex:1;padding:10px 4px 8px;background:none;border:none;border-bottom:2px solid transparent;display:flex;flex-direction:column;align-items:center;gap:2px}
+.tab-btn .tab-icon{font-size:16px}
+.tab-btn .tab-label{font-size:10px;font-weight:500;color:#6b7280}
+.tab-btn.active{border-bottom-color:#40916c}
+.tab-btn.active .tab-label{color:#40916c}
+/* content */
+#content{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.tab-panel{display:none;flex:1;flex-direction:column;overflow:hidden}
+.tab-panel.active{display:flex}
+/* camera */
+#camera-screen{background:#000;flex-direction:column}
+#cam-top-bar{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;flex-shrink:0;background:rgba(0,0,0,0.5);gap:8px}
+#cam-back{background:rgba(255,255,255,0.2);border-radius:20px;padding:8px 14px;color:#fff;font-size:13px;flex-shrink:0}
+#cam-capture-main{background:#74c69d;border-radius:24px;padding:10px 20px;color:#1a3c2e;font-size:15px;font-weight:700;flex-shrink:0}
+#cam-flip{background:rgba(255,255,255,0.2);border-radius:20px;padding:8px 12px;color:#fff;font-size:18px;flex-shrink:0}
+#video{width:100%;flex:1;object-fit:cover;display:block;min-height:0}
+#cam-bottom-bar{display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px;flex-shrink:0;background:rgba(0,0,0,0.5)}
+#cam-hint{font-size:12px;color:rgba(255,255,255,0.8)}
+#shutter{width:68px;height:68px;border-radius:50%;background:#fff;border:4px solid #74c69d;font-size:26px;display:flex;align-items:center;justify-content:center}
+#cam-error{display:none;align-items:center;justify-content:center;padding:24px;text-align:center;font-size:14px;color:#fff;background:rgba(0,0,0,0.9);line-height:1.6;position:absolute;inset:0}
+#viewfinder{position:absolute;top:60px;left:0;right:0;bottom:110px;pointer-events:none;display:flex;align-items:center;justify-content:center}
+#vf-box{width:200px;height:200px;position:relative;border:2px solid rgba(255,255,255,0.3);border-radius:12px}
+.vf-corner{position:absolute;width:18px;height:18px}
+.vf-tl{top:-2px;left:-2px;border-top:3px solid #74c69d;border-left:3px solid #74c69d}
+.vf-tr{top:-2px;right:-2px;border-top:3px solid #74c69d;border-right:3px solid #74c69d}
+.vf-bl{bottom:-2px;left:-2px;border-bottom:3px solid #74c69d;border-left:3px solid #74c69d}
+.vf-br{bottom:-2px;right:-2px;border-bottom:3px solid #74c69d;border-right:3px solid #74c69d}
+/* analyzing */
+#analyzing-screen{align-items:center;justify-content:center;gap:20px;padding:32px;background:#f5f0e8}
+#snap-preview{width:160px;height:160px;object-fit:cover;border-radius:14px;border:2px solid #74c69d;display:none}
+.dots-row{display:flex;gap:8px}
+.dot{width:8px;height:8px;border-radius:50%;animation:blink 1s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:0.2}50%{opacity:1}}
+/* new catch */
+#newcatch-screen{background:#f5f0e8}
+#newcatch-scroll{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:14px}
+#catch-photo{width:100%;height:180px;object-fit:cover;border-radius:12px;display:none}
+.card-box{border-radius:16px;overflow:hidden}
+.card-header{padding:20px 16px 12px;text-align:center}
+.card-emoji{font-size:52px;line-height:1}
+.card-name{font-size:13px;font-weight:700;color:#1c1c1c;margin-top:8px}
+.card-species{font-size:11px;color:#6b7280;margin-top:2px}
+.card-body{padding:12px 14px;background:#fdfcf9}
+.card-flavor{font-size:11px;font-style:italic;color:#7a5c44;padding-left:8px;margin-bottom:10px}
+.stat-row{display:flex;justify-content:space-between;font-size:11px;color:#6b7280;margin-bottom:3px}
+.stat-bar-bg{height:5px;background:#d8f3dc;border-radius:4px;overflow:hidden;margin-bottom:6px}
+.stat-bar-fill{height:100%;background:#40916c;border-radius:4px}
+.fun-fact-box{background:#fef3c7;border-radius:8px;padding:6px 10px;font-size:11px;color:#3d2b1f;margin-top:10px}
+.catch-actions{display:flex;gap:12px}
+.release-btn{flex:1;padding:13px;background:#f5f0e8;color:#7a5c44;border:1px solid rgba(0,0,0,0.1);border-radius:12px;font-size:14px;font-weight:600}
+.keep-btn{flex:2;padding:13px;background:#1a3c2e;color:#fff;border-radius:12px;font-size:14px;font-weight:600}
+/* collection */
+#collection-panel{gap:0}
+.filter-row{padding:12px 16px 8px;overflow-x:auto;flex-shrink:0}
+.filter-inner{display:flex;gap:8px;padding-bottom:4px}
+.filter-btn{padding:5px 14px;border-radius:20px;font-size:12px;font-weight:500;border:1px solid rgba(0,0,0,0.1);background:#fdfcf9;color:#6b7280;white-space:nowrap}
+.filter-btn.active{background:#40916c;color:#fff;border-color:#40916c}
+#card-grid{overflow-y:auto;flex:1;padding:8px 16px 80px}
+.grid-count{font-size:12px;color:#6b7280;margin-bottom:10px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid-card{border-radius:14px;overflow:hidden;position:relative;border-width:1.5px;border-style:solid}
+.grid-card-top{padding:14px 8px 8px;text-align:center}
+.grid-card-emoji{font-size:38px}
+.dupe-badge{position:absolute;top:6px;right:6px;background:#1a3c2e;color:#fff;font-size:10px;font-weight:700;border-radius:10px;padding:2px 6px}
+.grid-card-bottom{padding:8px 10px;background:#fdfcf9}
+.grid-card-name{font-size:12px;font-weight:600;color:#1c1c1c}
+.rarity-badge{font-size:10px;font-weight:600;padding:2px 6px;border-radius:10px;border-width:1px;border-style:solid;display:inline-block;margin-top:4px}
+.empty-state{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:#6b7280;padding:32px;text-align:center}
+.empty-icon{font-size:48px}
+.empty-title{font-size:15px;font-weight:500;color:#1c1c1c}
+.empty-sub{font-size:13px}
+.empty-snap-btn{margin-top:8px;padding:11px 24px;background:#1a3c2e;color:#fff;border-radius:12px;font-size:14px;font-weight:600}
+/* trade */
+#trade-panel{overflow-y:auto}
+.trade-content{padding:16px;display:flex;flex-direction:column;gap:10px}
+.trade-hint{font-size:13px;color:#6b7280;margin-bottom:6px}
+.trade-row{display:flex;align-items:center;gap:12px;background:#fdfcf9;border:1px solid rgba(0,0,0,0.08);border-radius:14px;padding:12px 14px}
+.trade-icon{font-size:36px;width:54px;height:54px;display:flex;align-items:center;justify-content:center;border-radius:12px;flex-shrink:0}
+.trade-info{flex:1}
+.trade-name{font-size:14px;font-weight:600;color:#1c1c1c}
+.trade-sub{font-size:11px;color:#6b7280;margin-top:4px}
+.trade-btn{background:#1a3c2e;color:#fff;border-radius:10px;padding:8px 12px;font-size:12px;font-weight:600}
+/* shop */
+#shop-panel{overflow-y:auto}
+.shop-content{padding:16px;display:flex;flex-direction:column;gap:10px}
+.coins-bar{display:flex;align-items:center;gap:8px;background:#fef3c7;border-radius:12px;padding:10px 14px;margin-bottom:6px}
+.coins-bar-text{font-size:15px;font-weight:600;color:#3d2b1f}
+.shop-row{display:flex;align-items:center;gap:12px;background:#fdfcf9;border:1px solid rgba(0,0,0,0.08);border-radius:14px;padding:12px 14px}
+.shop-icon{font-size:32px;width:48px;height:48px;display:flex;align-items:center;justify-content:center;background:#d8f3dc;border-radius:12px;flex-shrink:0}
+.shop-info{flex:1}
+.shop-item-name{font-size:14px;font-weight:600;color:#1c1c1c}
+.shop-item-desc{font-size:11px;color:#6b7280;margin-top:2px}
+.buy-btn{background:#1a3c2e;color:#fff;border-radius:10px;padding:8px 12px;font-size:12px;font-weight:600}
+.buy-btn:disabled{background:#ccc}
+.owned-label{font-size:12px;color:#40916c;font-weight:600}
+/* avatar */
+#avatar-panel{overflow-y:auto}
+.avatar-content{padding:16px;display:flex;flex-direction:column;gap:16px}
+.avatar-preview{text-align:center;padding:24px 0;background:#f5f0e8;border-radius:16px;border:1px solid rgba(0,0,0,0.08);position:relative}
+.avatar-preview-inner{position:relative;display:inline-block}
+#preview-base{font-size:72px;line-height:1;display:block}
+#preview-hat{position:absolute;top:-20px;left:50%;transform:translateX(-50%);font-size:32px}
+#preview-eyes{position:absolute;top:10px;right:-20px;font-size:22px}
+#preview-acc{position:absolute;bottom:-10px;left:-20px;font-size:24px}
+.avatar-sub{margin-top:12px;font-size:13px;color:#6b7280}
+.slot-label{font-size:12px;color:#6b7280;font-weight:500;margin-bottom:8px}
+.slot-row{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px}
+.slot-btn{width:44px;height:44px;border-radius:10px;border:2px solid rgba(0,0,0,0.1);background:#fdfcf9;font-size:24px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.slot-btn.active{border-color:#40916c;background:#d8f3dc}
+.base-btn{width:48px;height:48px;border-radius:12px;border:2px solid rgba(0,0,0,0.1);background:#fdfcf9;font-size:28px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.base-btn.active{border-color:#40916c;background:#d8f3dc}
+/* toast */
+#toast{position:fixed;top:16px;left:16px;right:16px;background:#1a3c2e;color:#fff;border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:10px;font-size:14px;font-weight:500;box-shadow:0 4px 20px rgba(0,0,0,0.3);z-index:999;transform:translateY(-80px);transition:transform 0.3s}
+#toast.show{transform:translateY(0)}
+#toast-emoji{font-size:22px}
+/* card detail screen */
+#card-screen{background:#f5f0e8}
+#card-screen-header{background:#1a3c2e;padding:14px 16px;display:flex;align-items:center;gap:10px;flex-shrink:0}
+#card-back-btn{background:rgba(255,255,255,0.2);border-radius:8px;padding:6px 12px;color:#fff;font-size:13px}
+#card-screen-title{font-size:15px;color:#fff;font-weight:600}
+#card-scroll{flex:1;overflow-y:auto;padding:16px}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- TOAST -->
+  <div id="toast"><span id="toast-emoji">✓</span><span id="toast-msg"></span></div>
+
+  <!-- CAMERA SCREEN -->
+  <div id="camera-screen" class="screen" style="flex-direction:column">
+    <div id="cam-top-bar">
+      <button id="cam-back" onclick="closeCamera()">← Back</button>
+      <button id="cam-capture-main" onclick="capturePhoto()">📸 Capture</button>
+      <button id="cam-flip" onclick="flipCamera()">🔄</button>
+    </div>
+    <video id="video" autoplay playsinline muted></video>
+    <div id="cam-bottom-bar">
+      <div id="cam-hint">Point at a creature or object</div>
+      <button id="shutter" onclick="capturePhoto()">📸</button>
+    </div>
+    <div id="viewfinder">
+      <div id="vf-box">
+        <div class="vf-corner vf-tl"></div><div class="vf-corner vf-tr"></div>
+        <div class="vf-corner vf-bl"></div><div class="vf-corner vf-br"></div>
+      </div>
+    </div>
+    <div id="cam-error">Camera access denied.<br>Go to Settings → Safari → Camera → Allow,<br>then reload this page.</div>
+  </div>
+
+  <!-- ANALYZING SCREEN -->
+  <div id="analyzing-screen" class="screen">
+    <img id="snap-preview" alt="">
+    <div style="text-align:center">
+      <div style="font-size:32px;margin-bottom:8px">🔍</div>
+      <div style="font-size:16px;font-weight:600;color:#1c1c1c" id="analyzing-text">Analysing specimen</div>
+      <div style="font-size:13px;color:#6b7280;margin-top:6px">Claude is identifying what you found</div>
+    </div>
+    <div class="dots-row">
+      <div class="dot" style="background:#40916c;animation-delay:0s"></div>
+      <div class="dot" style="background:#74c69d;animation-delay:0.2s"></div>
+      <div class="dot" style="background:#d8f3dc;animation-delay:0.4s"></div>
+    </div>
+  </div>
+
+  <!-- NEW CATCH SCREEN -->
+  <div id="newcatch-screen" class="screen">
+    <div id="newcatch-scroll">
+      <div style="text-align:center;margin-bottom:4px">
+        <div style="font-size:13px;color:#40916c;font-weight:600;letter-spacing:1px;text-transform:uppercase">New catch!</div>
+        <div id="catch-title" style="font-size:22px;font-weight:700;color:#1c1c1c;margin-top:4px"></div>
+      </div>
+      <img id="catch-photo" alt="">
+      <div id="catch-card" class="card-box"></div>
+      <div class="catch-actions">
+        <button class="release-btn" onclick="releaseCreature()">Release 🕊️</button>
+        <button class="keep-btn" onclick="keepCreature()">Add to collection ✓</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CARD DETAIL SCREEN -->
+  <div id="card-screen" class="screen">
+    <div id="card-screen-header">
+      <button id="card-back-btn" onclick="closeCard()">← Back</button>
+      <span id="card-screen-title"></span>
+    </div>
+    <div id="card-scroll"></div>
+  </div>
+
+  <!-- HOME SCREEN -->
+  <div id="home-screen" class="screen active" style="flex-direction:column">
+    <div id="header">
+      <div id="avatar-icon">🧑‍🌿</div>
+      <div id="header-title">
+        <div class="name">🌿 SnapDex</div>
+        <div class="sub" id="header-sub">0 species · 0 total</div>
+      </div>
+      <div id="coin-display"><span>🪙</span><span id="coin-count">100</span></div>
+      <button id="snap-btn" onclick="openCamera()">📸</button>
+    </div>
+    <div id="tabs">
+      <button class="tab-btn active" onclick="switchTab('collection',this)"><span class="tab-icon">🗂️</span><span class="tab-label">Caught</span></button>
+      <button class="tab-btn" onclick="switchTab('trade',this)"><span class="tab-icon">🔄</span><span class="tab-label">Trade</span></button>
+      <button class="tab-btn" onclick="switchTab('shop',this)"><span class="tab-icon">🛒</span><span class="tab-label">Shop</span></button>
+      <button class="tab-btn" onclick="switchTab('avatar',this)"><span class="tab-icon">🧑‍🌿</span><span class="tab-label">Avatar</span></button>
+    </div>
+    <div id="content">
+      <div class="tab-panel active" id="collection-panel">
+        <div class="filter-row"><div class="filter-inner" id="filter-row"></div></div>
+        <div id="card-grid"></div>
+      </div>
+      <div class="tab-panel" id="trade-panel">
+        <div class="trade-content" id="trade-content"></div>
+      </div>
+      <div class="tab-panel" id="shop-panel">
+        <div class="shop-content" id="shop-content"></div>
+      </div>
+      <div class="tab-panel" id="avatar-panel">
+        <div class="avatar-content" id="avatar-content"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── Data ──────────────────────────────────────────────────────────────────────
+const RARITY = {
+  Common:   {color:"#6b7280",bg:"#f3f4f6",label:"Common",   coins:10},
+  Uncommon: {color:"#059669",bg:"#d1fae5",label:"Uncommon", coins:25},
+  Rare:     {color:"#2563eb",bg:"#dbeafe",label:"Rare",      coins:60},
+  Epic:     {color:"#7c3aed",bg:"#ede9fe",label:"Epic",      coins:150},
+  Legendary:{color:"#d97706",bg:"#fef3c7",label:"Legendary", coins:400}
+};
+const SHOP = [
+  {id:"hat1", emoji:"🎩",name:"Explorer Hat", desc:"Classic field look",    cost:60},
+  {id:"hat2", emoji:"🌿",name:"Leaf Crown",   desc:"One with nature",       cost:90},
+  {id:"hat3", emoji:"🦺",name:"Field Vest",   desc:"Many pockets",          cost:120},
+  {id:"eyes1",emoji:"🕶️",name:"Shades",       desc:"Cool in any biome",     cost:50},
+  {id:"eyes2",emoji:"🔭",name:"Monocle",      desc:"Distinguish yourself",  cost:80},
+  {id:"acc1", emoji:"🧣",name:"Nature Scarf", desc:"For chilly expeditions",cost:45},
+  {id:"acc2", emoji:"🎒",name:"Field Pack",   desc:"The explorer's staple", cost:100},
+  {id:"acc3", emoji:"🌻",name:"Sunflower Pin",desc:"Rare cosmetic",         cost:200},
+  {id:"bg1",  emoji:"🌲",name:"Forest Back.", desc:"Avatar background",     cost:150},
+  {id:"bg2",  emoji:"🌊",name:"Coastal Back.",desc:"Avatar background",     cost:150}
+];
+const BASES = ["🧑‍🌿","🧑","👩","🧔","👱","🧕","🧒","👧"];
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let save = loadSave() || {coins:100,collection:[],owned:[],avatar:{base:"🧑‍🌿",hat:null,eyes:null,acc:null,bg:null}};
+let stream = null;
+let facingMode = "environment";
+let pendingCreature = null;
+let capturedB64 = null;
+let activeFilter = "All";
+
+function loadSave(){try{const s=localStorage.getItem("snapdex-v2");return s?JSON.parse(s):null;}catch{return null;}}
+function persist(){try{localStorage.setItem("snapdex-v2",JSON.stringify(save));}catch{}}
+
+// ── Screen management ─────────────────────────────────────────────────────────
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ── Toast ─────────────────────────────────────────────────────────────────────
+let toastTimer;
+function showToast(msg, emoji="✓"){
+  clearTimeout(toastTimer);
+  document.getElementById('toast-msg').textContent = msg;
+  document.getElementById('toast-emoji').textContent = emoji;
+  document.getElementById('toast').classList.add('show');
+  toastTimer = setTimeout(()=>document.getElementById('toast').classList.remove('show'), 2500);
+}
+
+// ── Camera ────────────────────────────────────────────────────────────────────
+async function openCamera(){
+  showScreen('camera-screen');
+  await startCamera();
+}
+async function startCamera(){
+  if(stream) stream.getTracks().forEach(t=>t.stop());
+  document.getElementById('cam-error').style.display='none';
+  try{
+    stream = await navigator.mediaDevices.getUserMedia({video:{facingMode,width:{ideal:1280},height:{ideal:960}}});
+    document.getElementById('video').srcObject = stream;
+  } catch(e){
+    document.getElementById('cam-error').style.display='flex';
+  }
+}
+function flipCamera(){facingMode=facingMode==="environment"?"user":"environment";startCamera();}
+function closeCamera(){
+  if(stream) stream.getTracks().forEach(t=>t.stop());
+  stream=null;
+  showScreen('home-screen');
+}
+function capturePhoto(){
+  const vid = document.getElementById('video');
+  if(!vid.srcObject) return;
+  const c = document.createElement('canvas');
+  c.width=vid.videoWidth; c.height=vid.videoHeight;
+  c.getContext('2d').drawImage(vid,0,0);
+  const dataUrl = c.toDataURL('image/jpeg',0.85);
+  capturedB64 = dataUrl.split(',')[1];
+  if(stream) stream.getTracks().forEach(t=>t.stop());
+  stream=null;
+  analyzeImage(capturedB64, dataUrl);
+}
+
+// ── Identify ──────────────────────────────────────────────────────────────────
+async function analyzeImage(base64, dataUrl){
+  showScreen('analyzing-screen');
+  const prev = document.getElementById('snap-preview');
+  prev.src = dataUrl; prev.style.display='block';
+  let dots = 0;
+  const timer = setInterval(()=>{dots=(dots+1)%4;document.getElementById('analyzing-text').textContent='Analysing specimen'+'.'.repeat(dots);},400);
+  try{
+    const res = await fetch("https://api.anthropic.com/v1/messages",{
+      method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:1000,messages:[{role:"user",content:[
+        {type:"image",source:{type:"base64",media_type:"image/jpeg",data:base64}},
+        {type:"text",text:`You are the identification engine for SnapDex, a nature and object collecting game. Your job is to identify ANYTHING in a photo — animals, plants, food, fruit, vegetables, household objects, electronics, vehicles, minerals, fungi, insects, or anything else.
+
+IMPORTANT RULES:
+- Always identify SOMETHING. Never refuse. If uncertain, give your best guess based on what you can see.
+- For fruit and food: identify the specific type (e.g. "Navel Orange" not just "Orange", "Honeycrisp Apple" not just "Apple")
+- For animals: use the specific species name if visible (e.g. "European Robin" not just "Bird")
+- For objects: identify the exact item (e.g. "Mechanical Keyboard" not just "Keyboard")
+- Look at shape, color, texture, context — use every visual clue available
+- If the image is blurry or dark, still identify the most likely subject
+
+Respond ONLY with valid JSON, no markdown backticks, no extra text:
+{"name":"Specific common name","species":"Scientific name or detailed category","emoji":"Single most fitting emoji","rarity":"Common|Uncommon|Rare|Epic|Legendary","type":"Animal|Plant|Fungi|Mineral|Insect|Bird|Food|Object|Other","fun_fact":"One fascinating and specific fun fact max 20 words","stats":{"speed":1-100,"defense":1-100,"power":1-100},"flavor":"Poetic evocative one-liner max 12 words"}
+
+Rarity guide:
+- Common (10 coins): everyday items and animals — oranges, apples, pigeons, sparrows, house cats, dogs, roses, dandelions, pens, mugs
+- Uncommon (25 coins): less everyday — exotic fruit, deer, blue jays, hedgehogs, succulents, vintage items
+- Rare (60 coins): hard to find — foxes, owls, orchids, truffles, antique objects, unusual minerals
+- Epic (150 coins): impressive and rare — bald eagles, wolves, rare crystals, century-old trees, exotic reptiles
+- Legendary (400 coins): extraordinary — snow leopards, albino animals, giant sequoias, meteorites, extremely rare specimens
+
+Stats guide (make them feel appropriate to the subject):
+- speed: how fast/agile it is or feels (orange=5, cheetah=98, rock=1)
+- defense: toughness/hardness/resilience (egg=8, tortoise=90, diamond=99)
+- power: strength/impact/impressiveness (ant=40 for its size, elephant=95, flower=30)`}
+      ]}]})
+    });
+    const d = await res.json();
+    const txt = (d.content?.find(b=>b.type==="text")?.text||"").replace(/```json|```/g,"").trim();
+    const creature = JSON.parse(txt);
+    creature.id = creature.name+"-"+Date.now();
+    clearInterval(timer);
+    pendingCreature = creature;
+    showNewCatch(creature, dataUrl);
+  } catch(e){
+    clearInterval(timer);
+    showToast("Couldn't identify it — try again","❌");
+    showScreen('home-screen');
+  }
+}
+
+// ── New Catch ─────────────────────────────────────────────────────────────────
+function showNewCatch(c, dataUrl){
+  document.getElementById('catch-title').textContent = c.name;
+  const photo = document.getElementById('catch-photo');
+  if(dataUrl){photo.src=dataUrl;photo.style.display='block';} else photo.style.display='none';
+  document.getElementById('catch-card').innerHTML = buildCard(c, false, 0);
+  showScreen('newcatch-screen');
+}
+function keepCreature(){
+  save.collection.push(pendingCreature);
+  persist(); updateUI();
+  showToast(pendingCreature.name+" added!", pendingCreature.emoji);
+  pendingCreature=null; capturedB64=null;
+  showScreen('home-screen'); switchTabById('collection');
+}
+function releaseCreature(){
+  showToast("Specimen released 🕊️");
+  pendingCreature=null; capturedB64=null;
+  showScreen('home-screen');
+}
+
+// ── Card builder ──────────────────────────────────────────────────────────────
+function buildCard(c, showTrade, ownedCount){
+  const r = RARITY[c.rarity]||RARITY.Common;
+  const stats = c.stats||{speed:50,defense:50,power:50};
+  const tradeBtn = showTrade && ownedCount>1
+    ? `<button onclick="tradeCreature('${c.name}')" style="width:100%;margin-top:10px;padding:9px;background:#1a3c2e;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer">Trade duplicate → +${r.coins} 🪙</button>` : "";
+  return `<div class="card-box" style="border:1.5px solid ${r.color}40;box-shadow:0 2px 12px ${r.color}20">
+    <div class="card-header" style="background:linear-gradient(135deg,${r.bg},#d8f3dc)">
+      <div class="card-emoji">${c.emoji}</div>
+      <div class="card-name">${c.name}</div>
+      <div class="card-species">${c.species||""}</div>
+      <div style="margin-top:8px"><span class="rarity-badge" style="color:${r.color};background:${r.bg};border-color:${r.color}30">${r.label}</span></div>
+    </div>
+    <div class="card-body">
+      <div class="card-flavor" style="border-left:3px solid ${r.color}">"${c.flavor||""}"</div>
+      <div class="stat-row"><span>Speed</span><span>${stats.speed}</span></div>
+      <div class="stat-bar-bg"><div class="stat-bar-fill" style="width:${stats.speed}%"></div></div>
+      <div class="stat-row"><span>Defense</span><span>${stats.defense}</span></div>
+      <div class="stat-bar-bg"><div class="stat-bar-fill" style="width:${stats.defense}%"></div></div>
+      <div class="stat-row"><span>Power</span><span>${stats.power}</span></div>
+      <div class="stat-bar-bg"><div class="stat-bar-fill" style="width:${stats.power}%"></div></div>
+      <div class="fun-fact-box">💡 ${c.fun_fact||""}</div>
+      ${tradeBtn}
+    </div>
+  </div>`;
+}
+
+// ── Card detail ───────────────────────────────────────────────────────────────
+function openCard(name){
+  const c = save.collection.find(x=>x.name===name);
+  if(!c) return;
+  const owned = save.collection.filter(x=>x.name===name).length;
+  document.getElementById('card-screen-title').textContent = c.name;
+  document.getElementById('card-scroll').innerHTML = buildCard(c, true, owned);
+  showScreen('card-screen');
+}
+function closeCard(){ showScreen('home-screen'); }
+
+// ── Tabs ──────────────────────────────────────────────────────────────────────
+function switchTab(id, btn){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById(id+'-panel').classList.add('active');
+  renderTab(id);
+}
+function switchTabById(id){
+  const btns = document.querySelectorAll('.tab-btn');
+  const panels = ['collection','trade','shop','avatar'];
+  btns.forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  const idx = panels.indexOf(id);
+  if(idx>=0){ btns[idx].classList.add('active'); document.getElementById(id+'-panel').classList.add('active'); }
+  renderTab(id);
+}
+function renderTab(id){
+  if(id==='collection') renderCollection();
+  else if(id==='trade') renderTrade();
+  else if(id==='shop') renderShop();
+  else if(id==='avatar') renderAvatar();
+}
+
+// ── Collection ────────────────────────────────────────────────────────────────
+function getCounts(){
+  const c={};save.collection.forEach(x=>{c[x.name]=(c[x.name]||0)+1;});return c;
+}
+function getUnique(){
+  const seen={};return save.collection.filter(x=>{if(seen[x.name])return false;seen[x.name]=true;return true;});
+}
+function renderCollection(){
+  const unique = getUnique();
+  const counts = getCounts();
+  const filters = ['All',...Object.keys(RARITY)];
+  const fr = document.getElementById('filter-row');
+  fr.innerHTML = filters.map(f=>`<button class="filter-btn${activeFilter===f?' active':''}" onclick="setFilter('${f}')">${f}</button>`).join('');
+  const filtered = activeFilter==='All' ? unique : unique.filter(x=>x.rarity===activeFilter);
+  const grid = document.getElementById('card-grid');
+  if(filtered.length===0){
+    grid.innerHTML=`<div class="empty-state"><div class="empty-icon">🌿</div><div class="empty-title">Nothing here yet</div><div class="empty-sub">Snap a photo to catch your first specimen</div><button class="empty-snap-btn" onclick="openCamera()">📸 Open Camera</button></div>`;
+  } else {
+    const header = `<div class="grid-count">${unique.length} species caught</div>`;
+    const cards = filtered.map(c=>{
+      const r=RARITY[c.rarity]||RARITY.Common;
+      const dupe = counts[c.name]>1 ? `<div class="dupe-badge">×${counts[c.name]}</div>` : '';
+      return `<div class="grid-card" style="border-color:${r.color}40;background:#fdfcf9" onclick="openCard('${c.name.replace(/'/g,"\\'")}')">
+        <div class="grid-card-top" style="background:${r.bg}">${dupe}<div class="grid-card-emoji">${c.emoji}</div></div>
+        <div class="grid-card-bottom"><div class="grid-card-name">${c.name}</div><span class="rarity-badge" style="color:${r.color};background:${r.bg};border-color:${r.color}30">${r.label}</span></div>
+      </div>`;
+    }).join('');
+    grid.innerHTML = header + `<div class="grid">${cards}</div>`;
+  }
+}
+function setFilter(f){ activeFilter=f; renderCollection(); }
+
+// ── Trade ─────────────────────────────────────────────────────────────────────
+function renderTrade(){
+  const counts = getCounts();
+  const tradeable = getUnique().filter(c=>counts[c.name]>1);
+  const el = document.getElementById('trade-content');
+  if(tradeable.length===0){
+    el.innerHTML=`<div class="trade-hint">Trade duplicate catches for coins. You keep one of each species.</div><div class="empty-state" style="padding-top:40px"><div class="empty-icon">🔄</div><div class="empty-title">No duplicates yet</div><div class="empty-sub">Catch the same creature twice to trade extras</div></div>`;
+    return;
+  }
+  el.innerHTML = `<div class="trade-hint">Trade duplicate catches for coins. You keep one of each species.</div>`+
+    tradeable.map(c=>{
+      const r=RARITY[c.rarity]||RARITY.Common;
+      const d=counts[c.name]-1;
+      return `<div class="trade-row">
+        <div class="trade-icon" style="background:${r.bg}">${c.emoji}</div>
+        <div class="trade-info"><div class="trade-name">${c.name}</div><span class="rarity-badge" style="color:${r.color};background:${r.bg};border-color:${r.color}30">${r.label}</span><div class="trade-sub">×${d} duplicate${d>1?'s':''}</div></div>
+        <button class="trade-btn" onclick="tradeCreature('${c.name.replace(/'/g,"\\'")}')">+${r.coins} 🪙</button>
+      </div>`;
+    }).join('');
+}
+function tradeCreature(name){
+  const idx = save.collection.findIndex(c=>c.name===name);
+  if(idx===-1) return;
+  const r = RARITY[save.collection[idx].rarity]||RARITY.Common;
+  save.collection.splice(idx,1);
+  save.coins += r.coins;
+  persist(); updateUI(); renderTrade();
+  showToast(`+${r.coins} coins for ${name}!`,"🪙");
+}
+
+// ── Shop ──────────────────────────────────────────────────────────────────────
+function renderShop(){
+  const el = document.getElementById('shop-content');
+  el.innerHTML = `<div class="coins-bar"><span style="font-size:20px">🪙</span><span class="coins-bar-text">${save.coins} coins</span></div>`+
+    SHOP.map(item=>{
+      const owned = save.owned.includes(item.id);
+      const can = save.coins >= item.cost;
+      const right = owned
+        ? `<span class="owned-label">Owned ✓</span>`
+        : `<button class="buy-btn" ${can?'':'disabled'} onclick="buyItem('${item.id}')" style="${can?'':'background:#ccc'}">🪙 ${item.cost}</button>`;
+      return `<div class="shop-row" style="border-color:${owned?'#40916c60':'rgba(0,0,0,0.08)'}">
+        <div class="shop-icon">${item.emoji}</div>
+        <div class="shop-info"><div class="shop-item-name">${item.name}</div><div class="shop-item-desc">${item.desc}</div></div>
+        ${right}
+      </div>`;
+    }).join('');
+}
+function buyItem(id){
+  const item = SHOP.find(i=>i.id===id);
+  if(!item||save.coins<item.cost||save.owned.includes(id)) return;
+  save.coins -= item.cost;
+  save.owned.push(id);
+  persist(); updateUI(); renderShop();
+  showToast(item.name+" unlocked!", item.emoji);
+}
+
+// ── Avatar ────────────────────────────────────────────────────────────────────
+function renderAvatar(){
+  const av = save.avatar;
+  const ownedItems = SHOP.filter(i=>save.owned.includes(i.id));
+  const eq = prefix => ownedItems.filter(i=>i.id.startsWith(prefix));
+  const slots = [{key:"hat",label:"Hat",p:"hat"},{key:"eyes",label:"Eyes",p:"eyes"},{key:"acc",label:"Accessory",p:"acc"},{key:"bg",label:"Background",p:"bg"}];
+  const hatEmoji = av.hat ? (SHOP.find(i=>i.id===av.hat)||{}).emoji||'' : '';
+  const eyesEmoji = av.eyes ? (SHOP.find(i=>i.id===av.eyes)||{}).emoji||'' : '';
+  const accEmoji = av.acc ? (SHOP.find(i=>i.id===av.acc)||{}).emoji||'' : '';
+  let html = `<div class="avatar-preview">
+    <div class="avatar-preview-inner">
+      <span id="preview-base">${av.base}</span>
+      ${hatEmoji?`<span id="preview-hat">${hatEmoji}</span>`:''}
+      ${eyesEmoji?`<span id="preview-eyes">${eyesEmoji}</span>`:''}
+      ${accEmoji?`<span id="preview-acc">${accEmoji}</span>`:''}
+    </div>
+    <div class="avatar-sub">Your explorer avatar</div>
+  </div>`;
+  html += `<div><div class="slot-label">Base</div><div class="slot-row">${BASES.map(b=>`<button class="base-btn${av.base===b?' active':''}" onclick="setAvatar('base','${b}')">${b}</button>`).join('')}</div></div>`;
+  slots.forEach(slot=>{
+    const items = eq(slot.p);
+    html += `<div><div class="slot-label">${slot.label}${items.length===0?' <span style="opacity:0.5;font-size:11px">(buy in shop)</span>':''}</div>`;
+    if(items.length>0){
+      html += `<div class="slot-row"><button class="slot-btn${!av[slot.key]?' active':''}" style="font-size:18px" onclick="setAvatar('${slot.key}',null)">✕</button>`;
+      html += items.map(i=>`<button class="slot-btn${av[slot.key]===i.id?' active':''}" onclick="setAvatar('${slot.key}','${i.id}')">${i.emoji}</button>`).join('');
+      html += `</div>`;
+    }
+    html += `</div>`;
+  });
+  document.getElementById('avatar-content').innerHTML = html;
+}
+function setAvatar(key,val){
+  save.avatar[key]=val;
+  persist(); updateUI(); renderAvatar();
+}
+
+// ── UI update ─────────────────────────────────────────────────────────────────
+function updateUI(){
+  document.getElementById('coin-count').textContent = save.coins;
+  document.getElementById('avatar-icon').textContent = save.avatar.base;
+  const unique = getUnique();
+  document.getElementById('header-sub').textContent = unique.length+" species · "+save.collection.length+" total";
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+updateUI();
+renderCollection();
+</script>
+</body>
+</html>
